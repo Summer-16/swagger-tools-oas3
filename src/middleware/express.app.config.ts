@@ -21,7 +21,14 @@ export class ExpressAppConfig {
     private definitionPath;
     private openApiValidatorOptions;
 
-    constructor(definitionPath: string, appOptions: Oas3AppOptions, customMiddlewares?: OpenApiRequestHandler[]) {
+    /**
+     * 
+     * @param definitionPath full path to the Open Api Swagger file
+     * @param appOptions 
+     * @param customMiddlewares 
+     * @param jsonExpressType Allowed media type that the middleware will parse, defaults to 'application/json'
+     */
+    constructor(definitionPath: string, appOptions: Oas3AppOptions, customMiddlewares?: OpenApiRequestHandler[], jsonExpressType = 'application/json') {
         this.definitionPath = definitionPath;
         this.routingOptions = appOptions.routing;
         this.parserLimit = appOptions.parserLimit || '100kb';
@@ -41,7 +48,7 @@ export class ExpressAppConfig {
         this.app.use(bodyParser.raw({ type: 'application/pdf', limit: this.parserLimit }));
 
         this.app.use(this.configureLogger(appOptions.logging));
-        this.app.use(express.json());
+        this.app.use(express.json({type:jsonExpressType}));
         this.app.use(express.urlencoded({ extended: false }));
         this.app.use(cookieParser());
 

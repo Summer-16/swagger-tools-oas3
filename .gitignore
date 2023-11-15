@@ -11,3 +11,5 @@ test/*/browser
 package-lock.json
 .project
 .settings/
+
+.vscode/

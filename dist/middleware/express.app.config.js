@@ -13,7 +13,7 @@ const fs = require("fs");
 const jsyaml = require("js-yaml");
 const OpenApiValidator = require("express-openapi-validator");
 class ExpressAppConfig {
-    constructor(definitionPath, appOptions, customMiddlewares) {
+    constructor(definitionPath, appOptions, customMiddlewares, jsonExpressType = 'application/json') {
         this.definitionPath = definitionPath;
         this.routingOptions = appOptions.routing;
         this.parserLimit = appOptions.parserLimit || '100kb';
@@ -28,7 +28,7 @@ class ExpressAppConfig {
         this.app.use(bodyParser.json({ limit: this.parserLimit }));
         this.app.use(bodyParser.raw({ type: 'application/pdf', limit: this.parserLimit }));
         this.app.use(this.configureLogger(appOptions.logging));
-        this.app.use(express.json());
+        this.app.use(express.json({type:jsonExpressType}));
         this.app.use(express.urlencoded({ extended: false }));
         this.app.use(cookieParser());
         const swaggerUi = new swagger_ui_1.SwaggerUI(swaggerDoc, appOptions.swaggerUI);
