@@ -91,9 +91,10 @@ export class SwaggerRouter {
       if (req.openapi.schema['x-swagger-router-controller']) {
         let operationId = req.openapi.schema.operationId ? req.openapi.schema.operationId : req.method.toLowerCase();
         operationId = removeDashElementToCamelCase(operationId);
-        return (req.openapi.schema['x-swagger-router-controller'] + '_' + operationId).toLocaleLowerCase();
+        return (req.openapi.schema['x-swagger-router-controller'] + '_' + operationId).toLowerCase();
       } else {
-        return removeDashElementToCamelCase(req.openapi.schema.operationId);
+        const operationId = req.openapi.schema.operationId || '';
+        return removeDashElementToCamelCase(operationId).toLowerCase();
       }
     };
 
@@ -121,6 +122,22 @@ export class SwaggerRouter {
         handler = handlerCache[handlerName];
 
         this.logger.log('  Route handler: %s', handlerName);
+        
+        if (isUndefined(handler) && !req.openapi.schema['x-swagger-router-controller']) {
+          const possibleKeys = Object.keys(handlerCache).filter(key => key.endsWith(`_${handlerName}`));
+
+          if (possibleKeys.length === 1) {
+            const newHandlerName = possibleKeys[0];
+            this.logger.log(`    Found handler for '${handlerName}' by suffix: ${newHandlerName}`);
+            handlerName = newHandlerName;
+            handler = handlerCache[handlerName];
+          } else if (possibleKeys.length > 1) {
+            const err = new Error(`operationId '${req.openapi.schema.operationId}' is ambiguous. Matching handlers: ${possibleKeys.join(', ')}`);
+            res.statusCode = 500;
+            return next(err);
+          }
+        }
+        
         this.logger.log('    Missing: %s', isUndefined(handler) ? 'yes' : 'no');
         this.logger.log('    Ignored: %s', options.ignoreMissingHandlers === true ? 'yes' : 'no');
 

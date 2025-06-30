@@ -69,10 +69,11 @@ class SwaggerRouter {
             if (req.openapi.schema['x-swagger-router-controller']) {
                 let operationId = req.openapi.schema.operationId ? req.openapi.schema.operationId : req.method.toLowerCase();
                 operationId = (0, helpers_1.removeDashElementToCamelCase)(operationId);
-                return (req.openapi.schema['x-swagger-router-controller'] + '_' + operationId).toLocaleLowerCase();
+                return (req.openapi.schema['x-swagger-router-controller'] + '_' + operationId).toLowerCase();
             }
             else {
-                return (0, helpers_1.removeDashElementToCamelCase)(req.openapi.schema.operationId);
+                const operationId = req.openapi.schema.operationId || '';
+                return (0, helpers_1.removeDashElementToCamelCase)(operationId).toLowerCase();
             }
         };
         const send405 = (req, res, next) => {
@@ -94,6 +95,20 @@ class SwaggerRouter {
                 handlerName = getHandlerName(req);
                 handler = handlerCache[handlerName];
                 this.logger.log('  Route handler: %s', handlerName);
+                if ((0, lodash_1.isUndefined)(handler) && !req.openapi.schema['x-swagger-router-controller']) {
+                    const possibleKeys = Object.keys(handlerCache).filter(key => key.endsWith(`_${handlerName}`));
+                    if (possibleKeys.length === 1) {
+                        const newHandlerName = possibleKeys[0];
+                        this.logger.log(`    Found handler for '${handlerName}' by suffix: ${newHandlerName}`);
+                        handlerName = newHandlerName;
+                        handler = handlerCache[handlerName];
+                    }
+                    else if (possibleKeys.length > 1) {
+                        const err = new Error(`operationId '${req.openapi.schema.operationId}' is ambiguous. Matching handlers: ${possibleKeys.join(', ')}`);
+                        res.statusCode = 500;
+                        return next(err);
+                    }
+                }
                 this.logger.log('    Missing: %s', (0, lodash_1.isUndefined)(handler) ? 'yes' : 'no');
                 this.logger.log('    Ignored: %s', options.ignoreMissingHandlers === true ? 'yes' : 'no');
                 if ((0, lodash_1.isUndefined)(handler)) {
