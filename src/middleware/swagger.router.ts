@@ -40,8 +40,8 @@ export class SwaggerRouter {
 
           if (isPlainObject(controller)) {
             each(controller, (value, name) => {
-              let handlerId = (controllerName + '_' + name).toLowerCase();
-
+              // let handlerId = (controllerName + '_' + name).toLowerCase();
+              let handlerId = name;
               this.logger.log('      %s%s',
                 handlerId,
                 (isFunction(value) ? '' : ' (not a function, skipped)'));
